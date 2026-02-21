@@ -37,18 +37,18 @@ jobs:
         
       - name: Build with Next.js
         run: |
-          # 1. Force-create a clean config file to kill the 'experimental' ghost
-          echo "/** @type {import('next').NextConfig} */
-          const nextConfig = {
-            output: 'export',
-            basePath: '/Nexus-final',
-            images: { unoptimized: true },
-            trailingSlash: true,
-          };
-          export default nextConfig;" > next.config.mjs
-
-          # 2. Run the build
-          npm run build
+          # 1. List every file in the folder so we can find the hidden 'ghost'
+          echo "Listing all files in the root folder:"
+          ls -la
+          
+          # 2. Delete every possible config file to start 100% fresh
+          rm -f next.config.js next.config.mjs next.config.ts
+          
+          # 3. Create the clean config again
+          echo "export default { output: 'export', basePath: '/Nexus-final', images: { unoptimized: true }, trailingSlash: true };" > next.config.mjs
+          
+          # 4. Run the build with 'debug' mode to see where it gets the config
+          NODE_ENV=production npx next build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
