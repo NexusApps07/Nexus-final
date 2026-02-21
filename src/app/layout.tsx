@@ -21,7 +21,7 @@ const serif = Playfair_Display({
 // Deployment Constants
 const APP_NAME = "Loading Portal..."; 
 const THEME_COLOR = process.env.NEXT_PUBLIC_THEME_COLOR || "#38bdf8";
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/Nexus-final";
 
 export const metadata: Metadata = {
   title: APP_NAME,
