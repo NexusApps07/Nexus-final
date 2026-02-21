@@ -37,19 +37,14 @@ jobs:
         
       - name: Build with Next.js
         run: |
-          # 1. List every file in the folder so we can find the hidden 'ghost'
-          echo "Listing all files in the root folder:"
-          ls -la
-          
-          # 2. Delete every possible config file to start 100% fresh
-          rm -f next.config.js next.config.mjs next.config.ts
-          
-          # 3. Create the clean config again
+          # 1. Force the correct configuration
           echo "export default { output: 'export', basePath: '/Nexus-final', images: { unoptimized: true }, trailingSlash: true };" > next.config.mjs
-          # Kill the 'ghost' files even if they are invisible in the UI
-          rm -f next.config.js next.config.ts
-          # 4. Run the build with 'debug' mode to see where it gets the config
-          NODE_ENV=production npx next build
+          
+          # 2. Delete any old build data
+          rm -rf .next
+          
+          # 3. Build the site
+          npm run build
 
 
         env:
