@@ -1,18 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // 1. Force the static export (Creates the 'out' folder)
+  // 1. This MUST be at the top level (NOT inside experimental)
   output: 'export',
 
-  // 2. Multi-tenant Branding: Uses environment variable with a safe fallback
-  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '/Nexus-final',
+  // 2. Use your repo name for the basePath
+  basePath: '/Nexus-final',
 
-  // 3. GitHub Pages doesn't support Next.js Image Optimization
+  // 3. This MUST be at the top level
   images: {
     unoptimized: true,
   },
 
-  // 4. Ensures that sub-pages like /dashboard/ load correctly on static hosts
+  // 4. Highly recommended for GitHub Pages stability
   trailingSlash: true,
 };
 
