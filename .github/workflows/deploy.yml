@@ -46,12 +46,12 @@ jobs:
           
           # 3. Create the clean config again
           echo "export default { output: 'export', basePath: '/Nexus-final', images: { unoptimized: true }, trailingSlash: true };" > next.config.mjs
-          
+          # Kill the 'ghost' files even if they are invisible in the UI
+          rm -f next.config.js next.config.ts
           # 4. Run the build with 'debug' mode to see where it gets the config
           NODE_ENV=production npx next build
 
-          # Kill the 'ghost' files even if they are invisible in the UI
-          rm -f next.config.js next.config.ts
+
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
