@@ -37,18 +37,7 @@ jobs:
         
       - name: Build with Next.js
         # Adding 'rm -rf .next' ensures we don't use ANY old build data
-        run: |
-          npm run build
-          # This creates the 'out' folder manually
-          mkdir -p out
-          # This copies the static assets into it
-          cp -r .next/static out/_next/ 2>/dev/null || true
-          cp -r public/* out/ 2>/dev/null || true
-          # This copies the HTML pages
-          cp -r .next/server/app/* out/ 2>/dev/null || true
-          # Cleanup: ensure no server-side files are in the static out
-          find out -name "*.nft.json" -delete
-          find out -name "*.js" -not -path "out/_next/*" -delete
+        run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
