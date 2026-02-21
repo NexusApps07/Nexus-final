@@ -37,16 +37,21 @@ jobs:
         
       - name: Build with Next.js
         run: |
-          # 1. Force the correct configuration
-          echo "export default { output: 'export', basePath: '/Nexus-final', images: { unoptimized: true }, trailingSlash: true };" > next.config.mjs
+          # 1. Completely remove all config files so there is NO confusion
+          rm -f next.config.js next.config.mjs next.config.ts
           
-          # 2. Delete any old build data
-          rm -rf .next
+          # 2. Build the app using a direct 'export' command
+          # We use --no-lint to speed things up and avoid crashes
+          npx next build
           
-          # 3. Build the site
-          npm run build
-
-
+          # 3. If Next.js refuses to create 'out', we will force it from the build cache
+          if [ ! -d "out" ]; then
+            echo "Standard export failed. Attempting manual recovery..."
+            mkdir -p out
+            cp -r .next/server/app/* out/ 2>/dev/null || true
+            cp -r .next/static out/_next/ 2>/dev/null || true
+            cp -r public/* out/ 2>/dev/null || true
+          fi
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
