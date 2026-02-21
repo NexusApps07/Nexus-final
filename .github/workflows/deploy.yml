@@ -36,8 +36,10 @@ jobs:
         run: npm install
         
       - name: Build with Next.js
-        run: rm -rf .next
-             npm run build
+        # Adding 'rm -rf .next' ensures we don't use ANY old build data
+        run: |
+          rm -rf .next
+          npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
