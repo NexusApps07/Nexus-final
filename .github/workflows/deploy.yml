@@ -37,14 +37,23 @@ jobs:
         
       - name: Build with Next.js
         run: |
-          # 1. Completely remove all config files so there is NO confusion
+          # 1. Kill the 'ghost' files
           rm -f next.config.js next.config.mjs next.config.ts
           
-          # 2. Build the app using a direct 'export' command
-          # We use --no-lint to speed things up and avoid crashes
+          # 2. Create a FRESH, CLEAN config so Next.js knows the paths
+          echo "/** @type {import('next').NextConfig} */
+          const nextConfig = {
+            output: 'export',
+            basePath: '/Nexus-final',
+            images: { unoptimized: true },
+            trailingSlash: true,
+          };
+          export default nextConfig;" > next.config.mjs
+          
+          # 3. Run the build
           npx next build
           
-          # 3. If Next.js refuses to create 'out', we will force it from the build cache
+          # 4. Manual recovery (your excellent safety net)
           if [ ! -d "out" ]; then
             echo "Standard export failed. Attempting manual recovery..."
             mkdir -p out
@@ -55,6 +64,7 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          # ... keep your other env vars here ...
           NEXT_PUBLIC_THEME_COLOR: ${{ vars.NEXT_PUBLIC_THEME_COLOR }}
           NEXT_PUBLIC_BUSINESS_NAME: ${{ vars.NEXT_PUBLIC_BUSINESS_NAME }}
           NEXT_PUBLIC_BUSINESS_CITY: ${{ vars.NEXT_PUBLIC_BUSINESS_CITY }}
