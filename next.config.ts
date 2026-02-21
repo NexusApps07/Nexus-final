@@ -1,21 +1,25 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // 1. Required for hosting on GitHub Pages (generates 'out' folder)
-  output: 'export',
+  // 1. Force Next.js to generate the 'out' folder for GitHub Pages
+  output: 'export', 
 
-  // 2. Ensures assets (CSS/Images) load correctly on sub-repo URLs
-  // Make sure NEXT_PUBLIC_BASE_PATH is set to '/Nexus-final' in GitHub Secrets
-  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
+  // 2. Multi-tenant Branding: Reads the repo name or custom path from your GitHub variables
+  // If NEXT_PUBLIC_BASE_PATH is not set, it defaults to the repo name
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '/Nexus-final',
 
-  // 3. GitHub Pages doesn't support Next.js Image Optimization
+  // 3. Static Export requirement: GitHub Pages doesn't have a server to optimize images
   images: {
     unoptimized: true,
   },
 
-  // 4. CRITICAL: Ensures that /dashboard works as /dashboard/index.html
-  // This is often why the 'out' folder fails or links break on static hosts
+  // 4. Clean URLs: Ensures /dashboard works correctly on static hosting
   trailingSlash: true,
+
+  // 5. Optional: Suppress the telemetry message in build logs
+  telemetry: {
+    disabled: true,
+  }
 };
 
 export default nextConfig;
