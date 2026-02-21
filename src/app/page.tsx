@@ -36,7 +36,7 @@ export default function NexusMasterPortal() {
 
   // --- BRANDING DNA ---
   const brandCity = process.env.NEXT_PUBLIC_BUSINESS_CITY || "Premium Experience";
-  const brandColor = process.env.NEXT_PUBLIC_THEME_COLOR || "#38bdf8";
+  const brandColor = process.env.NEXT_PUBLIC_THEME_COLOR || "#38bdf9";
 
   // Glassmorphism Utility
   const glassBase = {
