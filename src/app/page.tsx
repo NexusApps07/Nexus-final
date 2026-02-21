@@ -93,14 +93,14 @@ export default function NexusMasterPortal() {
   const saveBooking = async () => {
     if (!selectedDate || !selectedTime) return;
     
-    const newBooking = { 
-      service: isScheduling.name, 
-      date: selectedDate, 
-      time: selectedTime,
-      business_slug: tenantSlug,
-      status: 'pending'
-    };
-
+   const newBooking = { 
+     service: isScheduling.name, 
+     price: isScheduling.price, // Add this line!
+     date: selectedDate, 
+     time: selectedTime,
+     business_slug: tenantSlug,
+     status: 'pending'
+   };
     // Optimistic UI update
     const optimisticBooking = { id: Date.now().toString(), ...newBooking };
     setBookings([optimisticBooking, ...bookings]);
