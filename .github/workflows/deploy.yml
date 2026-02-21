@@ -38,11 +38,11 @@ jobs:
       - name: Build with Next.js
         run: npm run build
         env:
-          # Pulls variables from GitHub Secrets
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_THEME_COLOR: ${{ secrets.NEXT_PUBLIC_THEME_COLOR }}
-          NEXT_PUBLIC_BASE_PATH: "/Nexus-final"
+          NEXT_PUBLIC_THEME_COLOR: ${{ vars.NEXT_PUBLIC_THEME_COLOR }}
+          NEXT_PUBLIC_BUSINESS_NAME: ${{ vars.NEXT_PUBLIC_BUSINESS_NAME }}
+          NEXT_PUBLIC_BUSINESS_CITY: ${{ vars.NEXT_PUBLIC_BUSINESS_CITY }}
           
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
