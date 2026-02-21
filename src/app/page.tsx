@@ -8,20 +8,24 @@ import {
   Smartphone, MapPin, Sparkles, Award, ShieldCheck, Pencil
 } from 'lucide-react';
 
-// 1. IMPORT THE SMART TITLE COMPONENT
+// IMPORT THE SMART TITLE COMPONENT
 import HeroTitle from "@/components/HeroTitle"; 
 import SmartCity from "@/components/SmartCity";
+
+// IMPORT SUPABASE
+import { supabase } from '@/lib/supabase';
 
 export default function NexusMasterPortal() {
   const [activeTab, setActiveTab] = useState('experience');
   const [bookings, setBookings] = useState<any[]>([]);
   const [pets, setPets] = useState<any[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  const [tenantSlug, setTenantSlug] = useState<string>('');
   
   // UI States
   const [isScheduling, setIsScheduling] = useState<any>(null); 
   const [isPetModalOpen, setIsPetModalOpen] = useState(false);
-  const [editingPetId, setEditingPetId] = useState<number | null>(null);
+  const [editingPetId, setEditingPetId] = useState<string | null>(null);
   const [showInstallHelp, setShowInstallHelp] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   
@@ -31,30 +35,46 @@ export default function NexusMasterPortal() {
   const [selectedTime, setSelectedTime] = useState('');
 
   // --- BRANDING DNA ---
-  // We keep these for colors/cities, but the Name will be handled by HeroTitle
   const brandCity = process.env.NEXT_PUBLIC_BUSINESS_CITY || "Premium Experience";
   const brandColor = process.env.NEXT_PUBLIC_THEME_COLOR || "#38bdf8";
 
-  // Glassmorphism Utility (Clean & Sharp)
+  // Glassmorphism Utility
   const glassBase = {
     backgroundColor: `${brandColor}10`, 
     backdropFilter: 'blur(20px)',
     border: `1px solid ${brandColor}15`,
   };
 
-  // --- CRASH-PROOF DATA LOADING ---
+  // --- REAL-TIME DATA LOADING FROM SUPABASE ---
   useEffect(() => {
     setIsMounted(true);
-    try {
-      const savedBookings = localStorage.getItem('nexus_vault_data');
-      const savedPets = localStorage.getItem('nexus_pet_data');
-      if (savedBookings) setBookings(JSON.parse(savedBookings));
-      if (savedPets) setPets(JSON.parse(savedPets));
-    } catch (e) {
-      console.error("Resetting vault.", e);
-      localStorage.removeItem('nexus_vault_data');
-      localStorage.removeItem('nexus_pet_data');
-    }
+    
+    // Extract slug from URL
+    const path = window.location.pathname;
+    const currentSlug = path.split("/").filter(Boolean)[0] || "default-business";
+    setTenantSlug(currentSlug);
+
+    const fetchTenantData = async () => {
+      // Fetch Bookings
+      const { data: bookingsData } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('business_slug', currentSlug)
+        .order('created_at', { ascending: false });
+        
+      if (bookingsData) setBookings(bookingsData);
+
+      // Fetch Pets
+      const { data: petsData } = await supabase
+        .from('pets')
+        .select('*')
+        .eq('business_slug', currentSlug)
+        .order('created_at', { ascending: false });
+        
+      if (petsData) setPets(petsData);
+    };
+
+    fetchTenantData();
   }, []);
 
   // --- LOGIC: DATES ---
@@ -70,26 +90,40 @@ export default function NexusMasterPortal() {
   }, []);
 
   // --- LOGIC: BOOKINGS ---
-  const saveBooking = () => {
+  const saveBooking = async () => {
     if (!selectedDate || !selectedTime) return;
-    const newBooking = { id: Date.now(), service: isScheduling.name, price: isScheduling.price, date: selectedDate, time: selectedTime };
-    const updated = [newBooking, ...bookings];
-    setBookings(updated);
-    localStorage.setItem('nexus_vault_data', JSON.stringify(updated));
+    
+    const newBooking = { 
+      service: isScheduling.name, 
+      date: selectedDate, 
+      time: selectedTime,
+      business_slug: tenantSlug,
+      status: 'pending'
+    };
+
+    // Optimistic UI update
+    const optimisticBooking = { id: Date.now().toString(), ...newBooking };
+    setBookings([optimisticBooking, ...bookings]);
     setIsScheduling(null);
     showToast("Booking Confirmed");
+
+    // Push to database
+    const { error } = await supabase.from('leads').insert([newBooking]);
+    if (error) {
+      console.error("Booking failed:", error);
+      showToast("Error saving booking");
+    }
   };
 
-  const deleteBooking = (id: number) => {
-    const updated = bookings.filter(b => b.id !== id);
-    setBookings(updated);
-    localStorage.setItem('nexus_vault_data', JSON.stringify(updated));
+  const deleteBooking = async (id: string) => {
+    setBookings(bookings.filter(b => b.id !== id));
+    await supabase.from('leads').delete().eq('id', id);
   };
 
   // --- LOGIC: PETS (ADD & EDIT) ---
   const openPetModal = (pet?: any) => {
     if (pet) {
-      setNewPet(pet);
+      setNewPet({ name: pet.name, breed: pet.breed || '', notes: pet.notes || '' });
       setEditingPetId(pet.id);
     } else {
       setNewPet({ name: '', breed: '', notes: '' });
@@ -98,29 +132,37 @@ export default function NexusMasterPortal() {
     setIsPetModalOpen(true);
   };
 
-  const savePet = () => {
+  const savePet = async () => {
     if (!newPet.name) return;
-    let updatedPets;
+    
+    const petData = { ...newPet, business_slug: tenantSlug };
+
     if (editingPetId) {
-      updatedPets = pets.map(p => p.id === editingPetId ? { ...newPet, id: editingPetId } : p);
+      // Optimistic update
+      setPets(pets.map(p => p.id === editingPetId ? { ...petData, id: editingPetId } : p));
       showToast("Profile Updated");
+      
+      // Database update
+      await supabase.from('pets').update(petData).eq('id', editingPetId);
     } else {
-      const petEntry = { id: Date.now(), ...newPet };
-      updatedPets = [petEntry, ...pets];
+      // Optimistic insert
+      const optimisticPet = { id: Date.now().toString(), ...petData };
+      setPets([optimisticPet, ...pets]);
       showToast(`${newPet.name} Added`);
+      
+      // Database insert
+      await supabase.from('pets').insert([petData]);
     }
-    setPets(updatedPets);
-    localStorage.setItem('nexus_pet_data', JSON.stringify(updatedPets));
+    
     setNewPet({ name: '', breed: '', notes: '' });
     setEditingPetId(null);
     setIsPetModalOpen(false);
   };
 
-  const deletePet = (id: number) => {
-    const updated = pets.filter(p => p.id !== id);
-    setPets(updated);
-    localStorage.setItem('nexus_pet_data', JSON.stringify(updated));
+  const deletePet = async (id: string) => {
+    setPets(pets.filter(p => p.id !== id));
     showToast("Profile Removed");
+    await supabase.from('pets').delete().eq('id', id);
   };
 
   const showToast = (msg: string) => {
@@ -151,7 +193,6 @@ export default function NexusMasterPortal() {
       <header className="px-6 pt-14 pb-8 relative z-10 flex justify-between items-start">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-3xl font-extrabold tracking-tight uppercase leading-none">
-            {/* 2. REPLACED STATIC TEXT WITH SMART COMPONENT */}
             <HeroTitle />
           </h1>
           <div className="flex items-center gap-2 mt-3 opacity-80">
@@ -200,7 +241,7 @@ export default function NexusMasterPortal() {
                     style={{ backgroundColor: brandColor }}
                     className="w-full py-4 rounded-xl text-black font-bold text-xs uppercase tracking-[0.1em] shadow-lg active:scale-95 transition-all"
                    >
-                     Reserve Now
+                      Reserve Now
                    </button>
                  </div>
               </div>
@@ -239,7 +280,7 @@ export default function NexusMasterPortal() {
               {pets.map(p => (
                 <div key={p.id} style={glassBase} className="p-5 rounded-[2rem] flex items-center justify-between border border-white/5 group">
                   <div className="flex items-center gap-5">
-                    <div className="h-12 w-12 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-xl font-bold" style={{ color: brandColor }}>{p.name[0]}</div>
+                    <div className="h-12 w-12 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-xl font-bold" style={{ color: brandColor }}>{p.name?.[0] || '?'}</div>
                     <div>
                         <h4 className="text-white font-bold">{p.name}</h4>
                         <p className="text-neutral-500 text-[10px] font-bold uppercase tracking-widest">{p.breed}</p>
